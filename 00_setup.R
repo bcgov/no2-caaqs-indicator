@@ -54,7 +54,7 @@ achievement_map <- function(az_data, stn_data, az_labs, stn_labs) {
           axis.text = element_blank(), 
           axis.ticks = element_blank(),
           panel.grid = element_blank(), 
-          legend.position = "bottom",,
+          legend.position = "bottom",
           legend.box.just = "top",
           legend.title = element_markdown(lineheight = 1.25)) # requires pkg 'ggtext'
 }
