@@ -27,39 +27,43 @@ library("bcdata")
 
 # Join old and new ------------------------
 
-## Stations
+## Stations ---------------------
 
 stations_summary <- read_rds("data/datasets/no2_results.rds") %>%
-  select(-c(flag_yearly_incomplete, flag_two_of_three_years,flag_daily_incomplete)) %>%
+  select(-flag_yearly_incomplete, -flag_two_of_three_years, 
+         -flag_daily_incomplete, -region) %>%
   rename(station_name = site, latitude = lat, longitude = lon) %>%
   mutate(caaqs_ambient = as.character(caaqs_ambient),
-         mgmt_level = as.character(mgmt_level))
+         mgmt_level = as.character(mgmt_level),
+         station_id = station_name)
+
+# In future bind_rows() with older data...
 
 stations_summary %>%
-  arrange(caaqs_year) %>% 
-  write_csv("out/databc/no2_site_summary.csv", na = "")
+  select(caaqs_year, airzone, station_name, station_id, 
+         latitude, longitude, instrument_type, metric, n_years, min_year, max_year, 
+         metric_value_ambient, caaqs_ambient,
+         excluded, metric_value_mgmt, mgmt_level) %>%
+  arrange(caaqs_year, airzone, station_name) %>%
+  write_csv("out/databc/no2_stations_summary.csv", na = "")
 
 
-## Ambient CAAQs by airzone 
+## Airzones -------------------
 
-az_ambient <- read_rds("data/datasets/az_ambient.rds") %>%
-  select(c(airzone, metric, n_years_ambient, metric_value_ambient, 
-         caaqs_ambient, rep_stn_id_ambient)) %>%
-  rename_with(.cols = ends_with("_ambient"), ~ str_remove(., "_ambient")) %>%
-  mutate(caaqs = as.character(caaqs), 
+airzones_summary <- read_rds("data/datasets/az_ambient.rds") %>%
+  mutate(rep_stn_name_ambient = rep_stn_id_ambient,
+         rep_stn_name_mgmt = rep_stn_id_mgmt, 
+         caaqs_ambient = as.character(caaqs_ambient), 
+         mgmt_level = as.character(mgmt_level),
          caaqs_year = .env$rep_year)
 
+# In future bind_rows() with older data...
+
 az_ambient %>%
-  arrange(caaqs_year) %>% 
-  write_csv("out/databc/no2_airzone_ambient_summary.csv", na = "")
-
-
-# air management zone 
-
-az_mgmt <- read_rds("data/datasets/az_mgmt.rds") %>%
-  mutate(mgmt_level = as.character(mgmt_level))
-
-az_mgmt %>%
-  arrange(caaqs_year)%>% 
-  write_csv("out/databc/no2_airzone_management_summary.csv", na = "")
-
+  select(caaqs_year, airzone, metric, 
+         n_years_ambient, metric_value_ambient, caaqs_ambient, 
+         rep_stn_name_ambient, rep_stn_id_ambient,
+         excluded, n_years_mgmt, metric_value_mgmt, mgmt_level, 
+         rep_stn_name_mgmt, rep_stn_id_mgmt) %>%
+  arrange(caaqs_year, airzone) %>% 
+  write_csv("out/databc/no2_airzones_summary.csv", na = "")
