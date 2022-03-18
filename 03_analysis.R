@@ -69,9 +69,10 @@ az_mgmt <- az_ambient %>%
   slice_max(mgmt_level, with_ties = FALSE) %>% 
   mutate(caaqs_year = .env$rep_year) %>% 
   ungroup() %>%
-  select(caaqs_year, airzone, mgmt_level, rep_metric = metric, 
-         metric_value = metric_value_mgmt, 
-         rep_stn_id = rep_stn_id_mgmt)
+  select(caaqs_year, airzone, mgmt_level, metric, 
+         metric_value_mgmt,
+         rep_stn_id = rep_stn_id_mgmt, n_years = n_years_mgmt, 
+         caaqs_ambient)
 
 
 write_rds(no2_results, "data/datasets/no2_results.rds")

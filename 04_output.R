@@ -20,6 +20,7 @@ library("tidyr")
 library("purrr")
 library("ggplot2")
 library("ggtext")
+library("stringr")
 
 library("sf")
 library("bcmaps")
@@ -46,15 +47,16 @@ az <- airzones() %>%
   group_by(airzone = Airzone) %>% 
   summarize()
 
-az_mgmt_sf <- az_mgmt %>%
-  complete(airzone = az$airzone, rep_metric, caaqs_year) %>% # Ensure ALL airzones
-  left_join(az, ., by = "airzone") %>% 
-  mutate(mgmt_level = replace_na(mgmt_level, "Insufficient Data"))
-
 az_ambient_sf <- az_ambient %>% 
   complete(airzone = az$airzone, metric) %>% # Ensure ALL airzones
   left_join(az, ., by = "airzone") %>% 
-  mutate(caaqs_ambient = replace_na(caaqs_ambient, "Insufficient Data"))
+  mutate(caaqs_ambient = replace_na(caaqs_ambient, levels(caaqs_ambient)[1]))
+
+az_mgmt_sf <- az_mgmt %>%
+  complete(airzone = az$airzone, metric, caaqs_year) %>% # Ensure ALL airzones
+  left_join(az, ., by = "airzone") %>% 
+  mutate(mgmt_level = replace_na(mgmt_level, levels(mgmt_level)[1]),
+         caaqs_ambient = replace_na(caaqs_ambient, levels(caaqs_ambient)[1]))
 
 stations_sf <- no2_results %>% 
   st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
@@ -66,6 +68,35 @@ print_summary <- stations_sf %>%
   summarise(n = n(), 
             n_achieved = sum(caaqs_ambient == "Achieved", na.rm = TRUE), 
             percent_achieved = round(n_achieved / n * 100))
+
+# Spatial files for leaflet maps ---------------------------------------
+
+v <- no2_results %>%
+  select("site", "metric", "metric_value_mgmt") %>%
+  mutate(name = paste0("metric_value_mgmt_", str_remove(metric, "no2_"))) %>%
+  select(-metric) %>%
+  pivot_wider(names_from = name, values_from = metric_value_mgmt)
+
+# Airzones by Management CAAQS
+# - Arranged by worst Management level, 
+# - BUT includes Management values for both metrics for the Representative station
+leaf_az_mgmt <- az_mgmt_sf %>%
+  select(airzone, caaqs_ambient, 
+         mgmt_level, rep_stn_id, n_years, geometry) %>%
+  group_by(airzone) %>% 
+  slice_max(mgmt_level, with_ties = FALSE) %>%
+  left_join(v, by = c("rep_stn_id" = "site"))
+
+# Stations by management CAAQS
+# - Arranged by worst CAAQS management, 
+# - BUT include Management values for both metrics 
+leaf_stations_mgmt <- stations_sf %>%
+  select(airzone, site, mgmt_level, n_years) %>%
+  group_by(site) %>% 
+  slice_max(mgmt_level, with_ties = FALSE) %>%
+  ungroup() %>%
+  left_join(v, by = "site")
+
 
 # Individual Station Plots ------------------------------------------------
 # - For print version and leaflet maps
@@ -205,10 +236,9 @@ write_rds(stn_plots, "data/datasets/print_stn_plots.rds")
 write_rds(print_summary, "data/datasets/print_summary.rds")
 
 # For leaflet maps
-filter(stations_sf) %>%
+filter(leaf_stations_mgmt) %>%
   st_transform(4326) %>% 
-  st_write("out/no2_caaqs.geojson", delete_dsn = TRUE)
+  st_write("out/no2_stations_mgmt.geojson", delete_dsn = TRUE)
 
-filter(az_ambient_sf) %>%
+filter(leaf_az_mgmt) %>%
   st_transform(4326) %>% 
-  st_write("out/no2_airzone.geojson", delete_dsn = TRUE)
