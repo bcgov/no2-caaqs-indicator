@@ -119,16 +119,17 @@ for(s in sites) {
   # Save for print version
   stn_plots[[s]][["3yr"]] <- g1
   stn_plots[[s]][["1yr"]] <- g2
+  
+  # Save svg for leaflet maps (save each that exists)
+  if(!is.null(g1)) {
+    ggsave(paste0("leaflet_map/station_plots/", s, "_3yr.svg"), g1, 
+           width = 778, height = 254, dpi = 72, units = "px", bg = "white")
+  }
+  if(!is.null(g2)) {
+    ggsave(paste0("leaflet_map/station_plots/", s, "_1yr.svg"), g2, 
+           width = 778, height = 254, dpi = 72, units = "px", bg = "white")
+  }
 }
-
-# Save svg for leaflet maps (save each that exists)
-stn_plots %>%
-  iwalk(~ for(i in seq_along(.x)) {
-    ggsave(paste0("leaflet_map/station_plots/", .y, "_", names(.x)[i], ".svg"),
-           plot = .x[[i]], width = 778, height = 254, dpi = 72, units = "px", 
-           bg = "white")
-  })
-
 
 # Summary plot -------------------------------------------------------------
 # - For print version
@@ -242,3 +243,4 @@ filter(leaf_stations_mgmt) %>%
 
 filter(leaf_az_mgmt) %>%
   st_transform(4326) %>% 
+  st_write("out/no2_airzones_mgmt.geojson", delete_dsn = TRUE)
