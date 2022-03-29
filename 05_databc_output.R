@@ -41,7 +41,7 @@ stations_summary <- read_rds("data/datasets/no2_results.rds") %>%
 
 stations_summary %>%
   select(caaqs_year, airzone, station_name, station_id, 
-         latitude, longitude, instrument_type, metric, n_years, min_year, max_year, 
+         latitude, longitude, metric, n_years, min_year, max_year, 
          metric_value_ambient, caaqs_ambient,
          excluded, metric_value_mgmt, mgmt_level) %>%
   arrange(caaqs_year, airzone, station_name) %>%
@@ -59,7 +59,7 @@ airzones_summary <- read_rds("data/datasets/az_ambient.rds") %>%
 
 # In future bind_rows() with older data...
 
-az_ambient %>%
+airzones_summary %>%
   select(caaqs_year, airzone, metric, 
          n_years_ambient, metric_value_ambient, caaqs_ambient, 
          rep_stn_name_ambient, rep_stn_id_ambient,
