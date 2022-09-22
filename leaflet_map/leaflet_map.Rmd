@@ -76,7 +76,8 @@ stations <- read_sf(here("out/no2_stations_mgmt.geojson")) %>%
     station_id = "site", 
     value1 = "metric_value_mgmt_3yr", 
     value2 = "metric_value_mgmt_1yr",
-    level1 = "mgmt_level"))
+    level1 = "mgmt_level")) %>% 
+  mutate(popup = str_replace(popup, '//', '/'))
 
 ## Count stations
 stns_n <- stations %>%

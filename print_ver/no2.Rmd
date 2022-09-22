@@ -1,11 +1,11 @@
 ---
-topic: "air"
-header-includes:
-  - \usepackage[utf8]{inputenc}
-  - \usepackage{siunitx}
-  - \sisetup{detect-all,per-mode=symbol}
-output: pdf_document
 title: "Status of Nitrogen Dioxide in B.C. (2018-2020)"
+output:
+  envreportutils.internal::print_ver: default
+  pdf_document: default
+  html_document:
+    self_contained: no
+topic: air
 ---
 
 <!--
@@ -40,6 +40,7 @@ library("ggtext") # Ensure map legends formatted correctly
 
 library("rcaaqs")
 library("envreportutils")
+library("envreportutils.internal")
 
 knitr_latex_char <- function(x) {
   y <- gsub("\\\\", "\\\\textbackslash{}", x) # backslash has to be first!
@@ -67,13 +68,13 @@ no2_lvls <- achievement_levels %>%
 # Summaries to consult when writing descriptions....
 
 # Which Achieved or Not
-read_rds(here("data/datasets/az_ambient.rds")) %>%
-  select(airzone, metric, caaqs_ambient) %>%
-  arrange(metric, caaqs_ambient) %>%
-  pivot_wider(names_from = metric, values_from = caaqs_ambient)
+# read_rds(here("data/datasets/az_ambient.rds")) %>%
+#   select(airzone, metric, caaqs_ambient) %>%
+#   arrange(metric, caaqs_ambient) %>%
+#   pivot_wider(names_from = metric, values_from = caaqs_ambient)
 
-read_rds(here("data/datasets/az_mgmt.rds")) %>%
-  select(airzone, mgmt_level, rep_metric)
+# read_rds(here("data/datasets/az_mgmt.rds")) %>%
+#   select(airzone, mgmt_level, rep_metric)
 
 ```
 
@@ -126,19 +127,9 @@ Environment](http://www.ccme.ca).
 \end{center}
 \vspace{2mm}
 
--   **Nitrogen dioxide is an air pollutant.** ~~Solid or liquid
-    particles floating in the air are called particulate matter. The
-    smallest of these particles---those that are 2.5 microns or less in
-    diameter, or less than 1/20th the width of a human hair---are called
-    nitrogen dioxide (NO~2~). Nitrogen dioxide comes from
-    many natural and human activities, including wildfires and emissions
-    from prescribed burning, forestry operations, residential
-    woodstoves, and transportation.^[1](#fn1)^~~
--   **Nitrogen dioxide can be harmful to humans.** ~~Exposure to
-    nitrogen dioxide has been associated with several serious
-    health effects including heart and lung disease.^[1](#fn1)^ Both
-    short-term (24-hour) and longer-term (a year or more) exposure to
-    nitrogen dioxide can have negative effects on human health.~~
+-   **Nitrogen Dioxide (NO~2~) is a gaseous pollutant formed along with other nitrogen oxides (NO~x~) during the high temperature combustion of fossil fuels.** 
+-   **Exposure to NO~2~ is known to affect human health and the environment** Long term exposures, for example, has been shown to induce the development of allergic responses, asthma, increases the susceptibility for respiratory infections, and has been linked to cardiovascular system and reproductive effects. Short term exposures can reduce lung function and aggravate respiratory symptoms and airway inflammation. These effects have no observed lower threshold, i.e., negative effects are observed even at low concentrations.
+- **Environmental effects of NO~2~ (and NO~x~ in general) include altered plant growth due to absorption through their leaves and from nitrogen deposition.** Impact on plants can negatively affect animals like caribou that depend on arboreal lichens for sustenance. NO2 also has indirect effects including its role in ozone formation and acid rain. Ozone is detrimental to plant life because exposure oxidizes (burns) plant tissues, and acid rain results in the acidification and eutrophication of ecosystems. Reddish-brown haze commonly found over urban centres is the result of higher concentrations of NO~2~ pollution.
 -   **Nitrogen dioxide levels met the Canadian Ambient Air
     Quality Standards at `r min(print_summary$percent_achieved)`
     percent of assessed monitoring stations in B.C.** There are two standards 
@@ -208,20 +199,20 @@ plots[["no2_ambient_summary_plot"]]
     concentrations of NO~2~. The statistical form of the NO~2~ 1-hour metric is 
     the 3-year average of the annual 98th percentile of the daily maximum 1-hr 
     average concentrations of NO~2~.
--   ~~The NO~2~ metric for an air zone is the highest NO~2~ metric value
+-   The NO~2~ metric for an air zone is the highest NO~2~ metric value
     reported from monitoring stations within the air zone. Air zone
     metric values are only taken from stations reporting on two years of
     data when there are no available three-year reporting stations in
-    the air zone.~~
+    the air zone.
 -   Only air monitoring stations with sufficient data on nitrogen dioxide
     concentrations for the `r year_range` reporting period
     were included in this indicator. Visit [Current Air Quality
     Data](http://www2.gov.bc.ca/gov/content?id=292EC5BD62A149A192B7DD2CE155E33E)
     for a complete list of air monitoring stations across B.C.
--   ~~Data completeness and sufficiency criteria for the two NO~2~ metrics
+-   Data completeness and sufficiency criteria for the two NO~2~ metrics
     are described in the [Guidance Document on Achievement
     Determination: Canadian Ambient Air Quality Standards for Fine
-    Particulate Matter and Ozone (2012)](http://publications.gc.ca/pub?id=9.697756&sl=0).~~
+    Particulate Matter and Ozone (2012)](http://publications.gc.ca/pub?id=9.697756&sl=0).
     
 ### Canada-wide Air Quality Management System
 
@@ -234,10 +225,10 @@ pollutants below the Canadian Ambient Air Quality Standards.
 -   There are seven air zones in British Columbia: Coastal, Georgia
     Strait, Lower Fraser Valley, Southern Interior, Central Interior,
     Northeast and Northwest.
--   ~~The Air Zone Management Framework defines air zone management levels
+-   The Air Zone Management Framework defines air zone management levels
     for nitrogen dioxide based on the higher of the annual and
     1-hour nitrogen dioxide levels reported from monitoring
-    stations within the air zone.~~
+    stations within the air zone.
 -   The four management levels are (1) green (actions for keeping clean
     areas clean); (2) yellow (actions for preventing air quality
     deterioration); (3) orange (actions for preventing Canadian Ambient
@@ -276,16 +267,16 @@ plots[["no2_mgmt_chart"]]
 
 #### More about the Air Quality Management System management levels:
 
--   ~~There can be cases when an air zone does not achieve a given
+-   There can be cases when an air zone does not achieve a given
     Canadian Ambient Air Quality Standard because of sources over which
     jurisdictions have little or no control, such as those related to
-    transboundary flows and exceptional events, like forest fires.~~
--   ~~Prior to determining management levels, jurisdictions have the
+    transboundary flows and exceptional events, like forest fires.
+-   Prior to determining management levels, jurisdictions have the
     option of adjusting their air zone metric values to remove such
     external influences. These arrangements aim to ensure that
     jurisdictions are responsible for managing only the emissions
-    sources they can control.~~
--   ~~Wildfires are generally the largest contributor to transboundary
+    sources they can control.
+-   Wildfires are generally the largest contributor to transboundary
     flows and exceptional events in B.C. Over the `r year_range` reporting
     period, `r #tfee$n_sites` stations had one or more days during the wildfire season
     (May-October) where the daily nitrogen dioxide
@@ -295,21 +286,21 @@ plots[["no2_mgmt_chart"]]
     majority of wildfire influences occurred in 2018 and 2020. Those daily
     concentrations were removed from the calculations of management
     levels, resulting in a change from red to orange for the Central Interior
-    and Georgia Strait air zones; from red to yellow for the Northeast air zone.~~
+    and Georgia Strait air zones; from red to yellow for the Northeast air zone.
 
 <!-- See the summaries calculated in the starting RMD chunk for information 
      needed to fill in the above bullet point. -->
 
 ### Methods
 
-~~The methods used to develop this indicator---including procedures, data
+The methods used to develop this indicator---including procedures, data
 requirements, and calculation of the Canadian Ambient Air Quality
 Standard nitrogen dioxide metrics---are detailed in the [Guidance
 Document on Achievement Determination: Canadian Ambient Air Quality
 Standards for Fine Particulate Matter and Ozone (2012)
 ](http://publications.gc.ca/pub?id=9.697756&sl=0)
 published by the [Canadian Council of Ministers of the
-Environment](http://www.ccme.ca).~~
+Environment](http://www.ccme.ca).
 
 **R package and code:** We have developed an
 [**R**](http://www.r-project.org) package to facilitate the calculation
@@ -322,10 +313,10 @@ the analysis presented on this page is also available on
 
 ### References and Other Useful Links
 
--   ~~Read individual [Air Zone
+-   Read individual [Air Zone
     reports](http://www2.gov.bc.ca/gov/search?id=04D14E7F7EE043889E1AC20E205CA3F8&tab=1&sourceId=267EE7E2432B4DE89BF1905EF80F505E&q=%22air+zone+report%22)
     on the achievement of the Canadian Ambient Air Quality Standards for
-    ground-level ozone and fine particulate matter in B.C.~~
+    ground-level ozone and fine particulate matter in B.C.
 -   [Learn more about the implementation of the Air Quality Management
     System in British
     Columbia](http://www2.gov.bc.ca/gov/content?id=8FA84ADC845A49AB93E525A58D9D4A97)
@@ -344,16 +335,16 @@ the analysis presented on this page is also available on
 \*By accessing these datasets, you agree to the licence associated with
 each file, as indicated in parentheses below.
 
--   ~~[Indicator data: BC Nitrogen Dioxide Canadian Ambient Air
+-   [Indicator data: BC Nitrogen Dioxide Canadian Ambient Air
     Quality Standards
-    `r year_range`](https://catalogue.data.gov.bc.ca/dataset/699be99e-a9ba-403e-b0fe-3d13f84f45ab) (`r get_data_license("ogl-bc")`)~~
--   ~~[BC NO~2~ Hourly Data & Air Monitoring Station
-    locations](https://catalogue.data.gov.bc.ca/dataset/77eeadf4-0c19-48bf-a47a-fa9eef01f409) (`r get_data_license("ogl-bc")`)~~
+    `r year_range`](https://catalogue.data.gov.bc.ca/dataset/699be99e-a9ba-403e-b0fe-3d13f84f45ab) (`r get_data_license("ogl-bc")`)
+-   [BC NO~2~ Hourly Data & Air Monitoring Station
+    locations](https://catalogue.data.gov.bc.ca/dataset/77eeadf4-0c19-48bf-a47a-fa9eef01f409) (`r get_data_license("ogl-bc")`)
 -   [BC Air
     Zones](https://catalogue.data.gov.bc.ca/dataset/e8eeefc4-2826-47bc-8430-85703d328516) (`r get_data_license("ogl-bc")`)
 
-~~Published and Available On-Line at Environmental Reporting BC (April 2021):
-<http://www.env.gov.bc.ca/soe/indicators/air/fine_pm.html>~~
+Published and Available On-Line at Environmental Reporting BC (April 2021):
+<http://www.env.gov.bc.ca/soe/indicators/air/fine_pm.html>
 
 Email correspondence to: envreportbc@gov.bc.ca
 
