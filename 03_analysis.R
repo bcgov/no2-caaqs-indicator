@@ -45,10 +45,12 @@ no2_3yr <- get_caaqs(no2_3yr_mgmt) %>%
 no2_1yr <- get_caaqs(no2_1yr_mgmt) %>%
   mutate(n_years = 1)
 
+#check for double entrues
 # Combine and filter
 no2_results <- bind_rows(no2_3yr, no2_1yr) %>%
+  ungroup() %>%
   filter(caaqs_year == .env$rep_year) %>% 
-  left_join(stations_clean, by = "site") %>% 
+  left_join(stations_clean, by = "site") %>%
   # Ensure only 1 analysis per site
   add_count(site, metric) %>%
   assert(in_set(1), n) %>%

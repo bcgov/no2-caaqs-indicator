@@ -36,10 +36,18 @@ options("rcaaqs.timezone" = "Etc/GMT+8")
 # Load Data ---------------------------------
 stations <- read_csv("data/raw/caaqs_stationlist.csv", show_col_types = FALSE) %>%
   clean_names() %>%
-  rename(lon = long)
+  rename(lon = long) %>%
+  group_by(site) %>%
+  slice(1)
+# remove non-AQMS sites
+lst_remove <- stations %>%
+  filter(aqms == 'N') %>%
+  pull(site)
 
 no2 <- read_rds("data/raw/no2_caaqs.Rds") %>%
-  as_tibble()
+  as_tibble() %>%
+  filter(!site %in% lst_remove)
+
 
 az <- airzones()
 
@@ -108,8 +116,13 @@ t <- no2_clean %>%
 # Last details -----------------------
 
 # Only keep stations with data
-stations_clean <- semi_join(stations_clean, no2_clean, by = "site")
+stations_clean <- semi_join(stations_clean, no2_clean, by = "site") %>%
+  ungroup() %>%
+  group_by(site) %>%
+  slice(1) %>%
+  ungroup()
 
 # Write data ------------------------------
 write_rds(stations_clean, "data/datasets/stations_clean.rds")
 write_rds(no2_clean, "data/datasets/no2_clean.rds", compress = "gz")
+
