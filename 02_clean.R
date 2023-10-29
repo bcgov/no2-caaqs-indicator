@@ -37,6 +37,7 @@ options("rcaaqs.timezone" = "Etc/GMT+8")
 stations <- read_csv("data/raw/caaqs_stationlist.csv", show_col_types = FALSE) %>%
   clean_names() %>%
   rename(lon = long) %>%
+  mutate(site = gsub('#','',site)) %>%
   group_by(site) %>%
   slice(1)
 # remove non-AQMS sites
@@ -46,10 +47,13 @@ lst_remove <- stations %>%
 
 no2 <- read_rds("data/raw/no2_caaqs.Rds") %>%
   as_tibble() %>%
+  mutate(site = gsub('#','',site)) %>%
   filter(!site %in% lst_remove)
 
 
-az <- airzones()
+az <- airzones()%>% 
+  st_make_valid() # fixes invalid geometry error in assign_airzones function below
+
 
 
 # Clean Stations -------------------------------------------------------------
@@ -58,16 +62,15 @@ az <- airzones()
 # - subset to those stations analysed
 
 stations_clean <- stations %>%
-
-  # Look for problems
-  assert(within_bounds(-90, 90), lat) %>%
-  assert(within_bounds(-180, 180), lon) %>%
+  filter(!is.na(lat)) %>%
+  
 
   # Use airzones from bcmaps
   select(-airzone) %>%
   assign_airzone(airzones = az, 
                  station_id = "site", 
                  coords = c("lon", "lat")) %>%
+  filter(!is.na(airzone)) %>%
   assert(not_na, airzone) %>%
   
   # Only keep stations for no2

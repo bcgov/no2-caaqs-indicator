@@ -116,6 +116,9 @@ for(s in sites) {
   g1 <- plot_caaqs(no2_3yr_mgmt, id = s, id_col = "site", year_min = 2013)
   g2 <- plot_caaqs(no2_1yr_mgmt, id = s, id_col = "site", year_min = 2013)
   
+  #fix legend order
+  g1 <- fix_legendorder(g1)
+  g2 <- fix_legendorder(g2)
   # Save for print version
   stn_plots[[s]][["3yr"]] <- g1
   stn_plots[[s]][["1yr"]] <- g2

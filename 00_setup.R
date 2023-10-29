@@ -59,6 +59,38 @@ achievement_map <- function(az_data, stn_data, az_labs, stn_labs) {
           legend.title = element_markdown(lineheight = 1.25)) # requires pkg 'ggtext'
 }
 
-
+fix_legendorder <- function(g) {
+  
+  #' #added to customized legend order and labels
+  mgmt_breaks <- c(
+    'Insufficient Data', 
+    'Actions for Achieving Air Zone CAAQS' ,
+    'Actions for Preventing CAAQS Exceedance',
+    'Actions for Preventing Air Quality Deterioration',
+    'Actions for Keeping Clean Areas Clean'
+  )
+  mgmt_labels <- c(
+    'Insufficient Data', 
+    'Actions for Achieving Air Zone CAAQS' ,
+    'Actions for Preventing CAAQS Exceedance',
+    'Actions for Preventing Air Quality Deterioration',
+    'Actions for Keeping Clean Areas Clean'
+  )
+  mgmt_values <- c('Insufficient Data' = '#dbdbdb',
+                   'Actions for Preventing Air Quality Deterioration' = '#FEE08B',
+                   'Actions for Keeping Clean Areas Clean' = '#A6D96A',
+                   'Actions for Preventing CAAQS Exceedance' = '#F46D43',
+                   'Actions for Achieving Air Zone CAAQS' = '#A50026',
+                   "No Adjustment" = "#b4acb3", 
+                   "TF/EE Adjusted" = "#8f94a6")
+  
+  
+  
+  
+  g +
+    scale_fill_manual(breaks = mgmt_breaks,
+                      labels = mgmt_labels,
+                      values = mgmt_values) 
+}
 
 
