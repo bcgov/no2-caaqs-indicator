@@ -28,32 +28,32 @@ rmarkdown::render("print_ver/no2.Rmd", output_file = outfile)
 
 ###############################################################################################
 ## copy files to web dev folder
-air_indicators_path <- "~/soe_wwwd/indicators/air"
-air_viz_path <- file.path(air_indicators_path, "no2_viz/")
-dir.create(air_viz_path, showWarnings = FALSE)
-air_indicators_station_plots <- file.path(air_viz_path, "station_plots/")
-dir.create(air_indicators_station_plots, showWarnings = FALSE)
+#air_indicators_path <- "~/soe_wwwd/indicators/air"
+#air_viz_path <- file.path(air_indicators_path, "no2_viz/")
+#dir.create(air_viz_path, showWarnings = FALSE)
+#air_indicators_station_plots <- file.path(air_viz_path, "station_plots/")
+#dir.create(air_indicators_station_plots, showWarnings = FALSE)
 
-web_viz_plots <- list.files("leaflet_map/station_plots", full.names = TRUE)
-
-over_copy <- function(...) {
-  file.copy(..., overwrite = TRUE)
-}
-
-## Copy print version
-over_copy(file.path("print_ver", outfile), 
-          file.path(air_indicators_path, "print_ver/"))
-
-## Copy the management viz map and bar chart plots
-over_copy("out/no2_caaqs_mgmt_map.svg", 
-          file.path(air_indicators_path, "images/"))
-
-over_copy("out/no2_caaqs_mgmt_chart.svg", 
-          file.path(air_indicators_path, "images/"))
-
-## Copy leaflet map
-over_copy("leaflet_map/leaflet_map.html", air_viz_path)
-
-## Copy dataviz plots
-lapply(list.files(air_indicators_station_plots, full.names = TRUE), file.remove)
-lapply(web_viz_plots, over_copy, to = air_indicators_station_plots)
+# web_viz_plots <- list.files("leaflet_map/station_plots", full.names = TRUE)
+# 
+# over_copy <- function(...) {
+#   file.copy(..., overwrite = TRUE)
+# }
+# 
+# ## Copy print version
+# over_copy(file.path("print_ver", outfile), 
+#           file.path(air_indicators_path, "print_ver/"))
+# 
+# ## Copy the management viz map and bar chart plots
+# over_copy("out/no2_caaqs_mgmt_map.svg", 
+#           file.path(air_indicators_path, "images/"))
+# 
+# over_copy("out/no2_caaqs_mgmt_chart.svg", 
+#           file.path(air_indicators_path, "images/"))
+# 
+# ## Copy leaflet map
+# over_copy("leaflet_map/leaflet_map.html", air_viz_path)
+# 
+# ## Copy dataviz plots
+# lapply(list.files(air_indicators_station_plots, full.names = TRUE), file.remove)
+# lapply(web_viz_plots, over_copy, to = air_indicators_station_plots)
