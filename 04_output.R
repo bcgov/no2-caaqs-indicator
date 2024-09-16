@@ -65,6 +65,7 @@ stations_sf <- no2_results %>%
 # Numbers for print version 
 print_summary <- stations_sf %>%
   group_by(metric) %>%
+  filter(!is.na(metric_value_ambient)) |> 
   summarise(n = n(), 
             n_achieved = sum(caaqs_ambient == "Achieved", na.rm = TRUE), 
             percent_achieved = round(n_achieved / n * 100))
@@ -178,13 +179,13 @@ labels_df <-  data.frame(
                    "Georgia Strait", "Lower Fraser Valley"))
 
 g <- ggplot(az_mgmt_sf) +   
-  geom_sf(aes(fill = mgmt_level), colour = "white") + 
+  geom_sf(aes(fill = mgmt_level), colour = "white", show.legend = TRUE) + 
   coord_sf(datum = NA) + 
   theme_minimal() + 
-  scale_fill_manual(values = colrs, 
-                    drop = FALSE, 
-                    name = "Air Zone Management Levels", 
-                    guide = guide_legend(reverse = TRUE)) + 
+  scale_fill_manual(values = colrs,
+                    drop = FALSE,
+                    name = "Air Zone Management Levels",
+                    guide = guide_legend(reverse = TRUE)) +
   theme(axis.title = element_blank(),
         axis.text = element_blank(), 
         axis.ticks = element_blank(),
