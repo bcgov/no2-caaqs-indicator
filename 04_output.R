@@ -65,6 +65,7 @@ stations_sf <- no2_results %>%
 # Numbers for print version 
 print_summary <- stations_sf %>%
   group_by(metric) %>%
+  filter(!is.na(metric_value_ambient)) |> 
   summarise(n = n(), 
             n_achieved = sum(caaqs_ambient == "Achieved", na.rm = TRUE), 
             percent_achieved = round(n_achieved / n * 100))
@@ -116,6 +117,9 @@ for(s in sites) {
   g1 <- plot_caaqs(no2_3yr_mgmt, id = s, id_col = "site", year_min = 2013)
   g2 <- plot_caaqs(no2_1yr_mgmt, id = s, id_col = "site", year_min = 2013)
   
+  #fix legend order
+  g1 <- fix_legendorder(g1)
+  g2 <- fix_legendorder(g2)
   # Save for print version
   stn_plots[[s]][["3yr"]] <- g1
   stn_plots[[s]][["1yr"]] <- g2
@@ -175,13 +179,13 @@ labels_df <-  data.frame(
                    "Georgia Strait", "Lower Fraser Valley"))
 
 g <- ggplot(az_mgmt_sf) +   
-  geom_sf(aes(fill = mgmt_level), colour = "white") + 
+  geom_sf(aes(fill = mgmt_level), colour = "white", show.legend = TRUE) + 
   coord_sf(datum = NA) + 
   theme_minimal() + 
-  scale_fill_manual(values = colrs, 
-                    drop = FALSE, 
-                    name = "Air Zone Management Levels", 
-                    guide = guide_legend(reverse = TRUE)) + 
+  scale_fill_manual(values = colrs,
+                    drop = FALSE,
+                    name = "Air Zone Management Levels",
+                    guide = guide_legend(reverse = TRUE)) +
   theme(axis.title = element_blank(),
         axis.text = element_blank(), 
         axis.ticks = element_blank(),
@@ -244,3 +248,4 @@ filter(leaf_stations_mgmt) %>%
 filter(leaf_az_mgmt) %>%
   st_transform(4326) %>% 
   st_write("out/no2_airzones_mgmt.geojson", delete_dsn = TRUE)
+
