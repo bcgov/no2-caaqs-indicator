@@ -74,8 +74,7 @@ stations_clean <- stations %>%
   assert(not_na, airzone) %>%
   
   # Only keep stations for no2
-  filter(no2) %>%
-  select(site, region, airzone, lat, lon)
+    select(site, region, airzone, lat, lon)
 
 # Clean no2 -----------------------------------------------------------------
 
