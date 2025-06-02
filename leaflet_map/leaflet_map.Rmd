@@ -1,8 +1,9 @@
 ---
-title: " "
-output: 
+title: ' '
+output:
   html_document:
     css: "assets/caaqs-styles.css"
+  pdf_document: default
 ---
 
 ```{r setup, include = FALSE, warning=FALSE}
@@ -30,6 +31,8 @@ library("rcaaqs")
 
 # Get css
 css_caaqs_copy(folder = here("leaflet_map/"), overwrite = TRUE)
+
+setwd(here()) # Set working directory to the project root
 
 # Assign labels, colours, and cutoffs using rcaaqs ----------------------------
 # Ambient labels
