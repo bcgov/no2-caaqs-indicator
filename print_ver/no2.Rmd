@@ -1,12 +1,12 @@
 ---
-title: "Status of Nitrogen Dioxide in B.C. (2019-2021)"
+title: "Status of Nitrogen Dioxide in B.C. (2020-2022)"
 output:
   pdf_document: envreportutils.internal::print_ver
 topic: air
 ---
 
 <!--
-Copyright 2022 Province of British Columbia
+Copyright 2025 Province of British Columbia
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ knitr_latex_char <- function(x) {
   return(y)
 }
 
-year_range <- "2019-2021"
+year_range <- "2020-2022"
 
 # Data from 04_outputs.R
 plots <- read_rds(here("data/datasets/print_plots.rds"))
@@ -341,7 +341,7 @@ Published and Available On-Line at Environmental Reporting BC:
 Email correspondence to: envreportbc@gov.bc.ca
 
 *Suggested Citation*:  
-Environmental Reporting BC. 2024. Status of Suphur Dioxide in B.C. (`r year_range`). State of Environment Reporting, Ministry of Environment and Climate Change Strategy, British Columbia, Canada.
+Environmental Reporting BC. `r format(Sys.Date(), "%Y")`. Status of Suphur Dioxide in B.C. (`r year_range`). State of Environment Reporting, Ministry of Environment and Climate Change Strategy, British Columbia, Canada.
 
 # Appendix: Detailed nitrogen dioxide Candadian Ambient Air Quality Standard results for each monitoring station within air zones in B.C.
 
