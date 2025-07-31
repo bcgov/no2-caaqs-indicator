@@ -1,4 +1,4 @@
-# Copyright 2022 Province of British Columbia
+# Copyright 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -190,7 +190,7 @@ g <- ggplot(az_mgmt_sf) +
         axis.text = element_blank(), 
         axis.ticks = element_blank(),
         panel.grid = element_blank(),
-        legend.position = c(0.25, 0.12), legend.direction = "vertical",
+        legend.position = "none",
         plot.margin = unit(c(0,0,0,0),"mm")) +
   geom_text(data = labels_df, aes(x = x, y = y, label = airzone_name), 
             colour = "black", size = 6)

@@ -1,4 +1,4 @@
-# Copyright 2022 Province of British Columbia
+# Copyright 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -74,7 +74,7 @@ stations_clean <- stations %>%
   assert(not_na, airzone) %>%
   
   # Only keep stations for no2
-  filter(no2) %>%
+  #filter(site %in% no2$site) %>%
   select(site, region, airzone, lat, lon)
 
 # Clean no2 -----------------------------------------------------------------
