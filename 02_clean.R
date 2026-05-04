@@ -36,7 +36,7 @@ options("rcaaqs.timezone" = "Etc/GMT+8")
 # Load Data ---------------------------------
 stations <- read_csv("data/raw/caaqs_stationlist.csv", show_col_types = FALSE) %>%
   clean_names() %>%
-  rename(lon = long) %>%
+  # rename(lon = long) %>%
   mutate(site = gsub('#','',site)) %>%
   group_by(site) %>%
   slice(1)
