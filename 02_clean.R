@@ -86,8 +86,9 @@ no2_clean <- no2 %>%
   assert(in_set(FALSE), flag_tfee) %>%
 
   # Format dates, only keep dates in range
-  mutate(date_time = format_caaqs_dt(date_time), 
-         year = year(date_time)) %>% 
+  # mutate(date_time = format_caaqs_dt(date_time), 
+  #        year = year(date_time)) %>% 
+  mutate(year = year(date_time)) %>% 
   filter(year <= rep_year) %>% 
   
   # Clean negative values
