@@ -23,6 +23,13 @@ dir.create("out", showWarnings = FALSE)
 dir.create("leaflet_map/station_plots/", showWarnings = FALSE, recursive = TRUE)
 #dir.create("out/databc", showWarnings = FALSE)
 
+
+# Reporting year parameter
+# To generate results for multiple periods (e.g., 2021-2023 and 2022-2024)
+# Run the full pipeline once per year by updating rep_year accordingly.
+# Example: rep_year <- 2023 # generate 2021-2023 results
+#          rep_year <- 2024 # generate 2022-2024 results
+
 rep_year <- 2024
 
 
