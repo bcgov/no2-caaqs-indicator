@@ -65,7 +65,7 @@ no2_results <- bind_rows(no2_3yr, no2_1yr) %>%
   arrange(caaqs_year, airzone)
 
 
-# QA check: compare previous (2023) vs current (2024) results for consistency
+# Compare 2021-2023 and 2022-2024 results for consistency
 year_prev <- 2023
 year_curr <- 2024
 
