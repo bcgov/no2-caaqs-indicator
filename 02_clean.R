@@ -1,4 +1,4 @@
-# Copyright 2025 Province of British Columbia
+# Copyright 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -36,7 +36,7 @@ options("rcaaqs.timezone" = "Etc/GMT+8")
 # Load Data ---------------------------------
 stations <- read_csv("data/raw/caaqs_stationlist.csv", show_col_types = FALSE) %>%
   clean_names() %>%
-  rename(lon = long) %>%
+  #rename(lon = long) %>%
   mutate(site = gsub('#','',site)) %>%
   group_by(site) %>%
   slice(1)
@@ -126,6 +126,13 @@ stations_clean <- semi_join(stations_clean, no2_clean, by = "site") %>%
   ungroup()
 
 # Write data ------------------------------
-write_rds(stations_clean, "data/datasets/stations_clean.rds")
-write_rds(no2_clean, "data/datasets/no2_clean.rds", compress = "gz")
+write_rds(
+  stations_clean,
+  file.path(rep_dir_data, "stations_clean.rds")
+)
 
+write_rds(
+  no2_clean,
+  file.path(rep_dir_data, "no2_clean.rds"),
+  compress = "gz"
+)

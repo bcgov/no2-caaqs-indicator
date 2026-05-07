@@ -1,4 +1,4 @@
-# Copyright 2025 Province of British Columbia
+# Copyright 2026 Province of British Columbia
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,16 +26,14 @@ library("tidyr")
 library("purrr")
 library("lubridate")
 library("assertr")
-
 library("rcaaqs")
-
 library("bcdata")
 
 # Join old and new ------------------------
 # Load Data ----------------------
-no2_3yr_mgmt <- read_rds("data/datasets/no2_3yr_mgmt.rds")
-no2_1yr_mgmt <- read_rds("data/datasets/no2_1yr_mgmt.rds")
-stations_clean <- read_rds("data/datasets/stations_clean.rds")
+no2_3yr_mgmt  <- read_rds(file.path(rep_dir_data, "no2_3yr_mgmt.rds"))
+no2_1yr_mgmt  <- read_rds(file.path(rep_dir_data, "no2_1yr_mgmt.rds"))
+stations_clean <- read_rds(file.path(rep_dir_data, "stations_clean.rds"))
 
 # Station results -----------------------------------------
 # Filter by or add n_years
@@ -70,7 +68,15 @@ no2_results <- bind_rows(no2_3yr, no2_1yr) %>%
          everything(), -n, -flag_daily_incomplete, -flag_yearly_incomplete) %>% 
   arrange(caaqs_year, airzone)
 
-write_csv(no2_results, "out/databc/no2_stations_summary.csv", na = "")
+
+databc_dir <- file.path(rep_dir_out, "databc")
+dir.create(databc_dir, showWarnings = FALSE, recursive = TRUE)
+
+write_csv(
+  no2_results,
+  file.path(databc_dir, "no2_stations_summary.csv"),
+  na = ""
+)
 
 # Airzone results ---------------------------------------------------------
 # Get airzone results by metric
@@ -100,7 +106,13 @@ az_mgmt_year <- az_ambient_year %>%
          ) %>%
   arrange(caaqs_year, airzone)
 
-write_csv(az_mgmt_year, "out/databc/no2_airzones_summary.csv", na = "")
+
+write_csv(
+  az_mgmt_year,
+  file.path(databc_dir, "no2_airzones_summary.csv"),
+  na = ""
+)
+
 
 ## Stations ---------------------
 
