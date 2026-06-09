@@ -39,7 +39,9 @@ stations <- read_csv("data/raw/caaqs_stationlist.csv", show_col_types = FALSE) %
   #rename(lon = long) %>%
   mutate(site = gsub('#','',site)) %>%
   group_by(site) %>%
-  slice(1)
+  slice(1) %>%
+  filter(site != "Penticton Debeck Road") # Remove the new station because it has no associated data.
+  
 # remove non-AQMS sites
 lst_remove <- stations %>%
   filter(aqms == 'N') %>%
@@ -48,7 +50,8 @@ lst_remove <- stations %>%
 no2 <- read_rds("data/raw/no2_caaqs.Rds") %>%
   as_tibble() %>%
   mutate(site = gsub('#','',site)) %>%
-  filter(!site %in% lst_remove)
+  filter(!site %in% lst_remove) %>%
+  filter(site != "Penticton Debeck Road") # Remove the new station because it has no associated data.
 
 
 az <- airzones()%>% 

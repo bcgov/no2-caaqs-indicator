@@ -41,5 +41,4 @@ if(!file.exists(file_stn)) curl_download(file.path(ftp, "caaqs_stationlist.csv")
                                                    destfile = file_stn)
 
 # Update cached version of airzones
-airzones(ask = FALSE, force = TRUE) # Make sure up-to-date
-
+airzones(ask = FALSE, force = TRUE)

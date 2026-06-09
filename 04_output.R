@@ -238,8 +238,8 @@ ggsave(
 ## Bar Chart --------------
 
 g <- ggplot(
-      data = no2_results %>%
-        mutate(airzone = fct_na_value_to_level(airzone, "Air zone not assigned")),
+      data = no2_results, #%>%
+        #mutate(airzone = fct_na_value_to_level(airzone, "Air zone not assigned")),
   aes(x = metric, fill = mgmt_level)) + 
   geom_bar(alpha = 1, width = 0.8) +
   facet_wrap(~ airzone, ncol = 1) +
