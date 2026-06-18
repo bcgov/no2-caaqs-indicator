@@ -1,4 +1,4 @@
-# Copyright 2025 Province of British Columbia
+# Copyright 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -21,7 +21,7 @@ library("purrr")
 library("ggplot2")
 library("ggtext")
 library("stringr")
-
+library(forcats)
 library("sf")
 library("bcmaps")
 
@@ -29,12 +29,13 @@ library("rcaaqs")
 library("envreportutils")
 
 # Load Data --------------------------------------------------
-no2_results <- read_rds("data/datasets/no2_results.rds")
-no2_3yr_mgmt <- read_rds("data/datasets/no2_3yr_mgmt.rds")
-no2_1yr_mgmt <- read_rds("data/datasets/no2_1yr_mgmt.rds")
+no2_results  <- read_rds(file.path(rep_dir_data, "no2_results.rds"))
+no2_3yr_mgmt <- read_rds(file.path(rep_dir_data, "no2_3yr_mgmt.rds"))
+no2_1yr_mgmt <- read_rds(file.path(rep_dir_data, "no2_1yr_mgmt.rds"))
 
-az_ambient <- read_rds("data/datasets/az_ambient.rds")
-az_mgmt <- read_rds("data/datasets/az_mgmt.rds")
+az_ambient <- read_rds(file.path(rep_dir_data, "az_ambient.rds"))
+az_mgmt    <- read_rds(file.path(rep_dir_data, "az_mgmt.rds"))
+
 
 # Let's save plots for the print version
 print_plots <- list()
@@ -58,7 +59,8 @@ az_mgmt_sf <- az_mgmt %>%
   mutate(mgmt_level = replace_na(mgmt_level, levels(mgmt_level)[1]),
          caaqs_ambient = replace_na(caaqs_ambient, levels(caaqs_ambient)[1]))
 
-stations_sf <- no2_results %>% 
+stations_sf <- no2_results %>%
+  filter(!is.na(lat) & !is.na(lon)) %>%
   st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
   transform_bc_albers()
 
@@ -115,7 +117,24 @@ for(s in sites) {
   message("Creating plots for ", s)
   
   g1 <- plot_caaqs(no2_3yr_mgmt, id = s, id_col = "site", year_min = 2013)
+  
+  g1 <- g1 + theme(
+    axis.text.x = element_text(
+      angle = 45,       # Rotate text by 45 degrees
+      hjust = 1,        # Adjust horizontal justification
+      vjust = 1         # Adjust vertical justification
+    )
+  )
+  
   g2 <- plot_caaqs(no2_1yr_mgmt, id = s, id_col = "site", year_min = 2013)
+  
+  g2 <- g2 + theme(
+    axis.text.x = element_text(
+      angle = 45,       # Rotate text by 45 degrees
+      hjust = 1,        # Adjust horizontal justification
+      vjust = 1         # Adjust vertical justification
+    )
+  )
   
   #fix legend order
   g1 <- fix_legendorder(g1)
@@ -126,12 +145,18 @@ for(s in sites) {
   
   # Save svg for leaflet maps (save each that exists)
   if(!is.null(g1)) {
-    ggsave(paste0("leaflet_map/station_plots/", s, "_3yr.svg"), g1, 
-           width = 778, height = 254, dpi = 72, units = "px", bg = "white")
+    ggsave(
+      file.path(rep_dir_station_plots, paste0(s, "_3yr.svg")),
+      g1,
+      width = 778, height = 254, dpi = 72, units = "px", bg = "white"
+    )
   }
   if(!is.null(g2)) {
-    ggsave(paste0("leaflet_map/station_plots/", s, "_1yr.svg"), g2, 
-           width = 778, height = 254, dpi = 72, units = "px", bg = "white")
+    ggsave(
+      file.path(rep_dir_station_plots, paste0(s, "_1yr.svg")),
+      g2,
+      width = 778, height = 254, dpi = 72, units = "px", bg = "white"
+    )
   }
 }
 
@@ -198,12 +223,24 @@ g <- ggplot(az_mgmt_sf) +
 print_plots[["no2_mgmt_map"]] <- g
 
 # SVG of airzone CAAQS mgmt level map
-ggsave("out/no2_caaqs_mgmt_map.svg", plot = g, dpi = 72,
-       width = 500, height = 450, units = "px", bg = "white")
+
+ggsave(
+  file.path(rep_dir_out, "no2_caaqs_mgmt_map.svg"),
+  plot  = g,
+  dpi   = 72,
+  width = 500,
+  height = 450,
+  units = "px",
+  bg    = "white"
+)
+
 
 ## Bar Chart --------------
 
-g <- ggplot(data = no2_results, aes(x = metric, fill = mgmt_level)) + 
+g <- ggplot(
+      data = no2_results, #%>%
+        #mutate(airzone = fct_na_value_to_level(airzone, "Air zone not assigned")),
+  aes(x = metric, fill = mgmt_level)) + 
   geom_bar(alpha = 1, width = 0.8) +
   facet_wrap(~ airzone, ncol = 1) +
   xlab("") + ylab("Number of Reporting Stations") +
@@ -217,35 +254,100 @@ g <- ggplot(data = no2_results, aes(x = metric, fill = mgmt_level)) +
   theme_soe_facet() +
   theme(panel.grid.major.y = (element_blank()),
         axis.text = element_text(size = 14),
+        axis.text.y = element_text(hjust  = 1),
         axis.title = element_text(size = 14),
+        axis.ticks.y = element_line(colour = "transparent"),
+        axis.ticks.length.y = unit(4, "pt"),
         legend.position = "bottom",
         legend.direction = "vertical",
         legend.box.just = "left",
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 14),
         legend.spacing = unit(5,"mm"),
-        plot.margin = unit(c(10,0,1,0),"mm"),
+        plot.margin = unit(c(10,3,1,0),"mm"),
         strip.text = element_text(size = 13))
 
 print_plots[["no2_mgmt_chart"]] <- g
 
 # SVG of airzone/station CAAQS mgmt achievement chart
-ggsave("out/no2_caaqs_mgmt_chart.svg", dpi = 72,
-       width = 500, height = 600, units = "px", bg = "white")
+ggsave(
+  file.path(rep_dir_out, "no2_caaqs_mgmt_chart.svg"),
+  dpi    = 72,
+  width  = 500,
+  height = 600,
+  units  = "px",
+  bg     = "white"
+)
+
 
 # Output data ------------------------------------------------
 
 # For print version
-write_rds(print_plots, "data/datasets/print_plots.rds")
-write_rds(stn_plots, "data/datasets/print_stn_plots.rds")
-write_rds(print_summary, "data/datasets/print_summary.rds")
+write_rds(
+  print_plots,
+  file.path(rep_dir_data, "print_plots.rds")
+)
+
+write_rds(
+  stn_plots,
+  file.path(rep_dir_data, "print_stn_plots.rds")
+)
+
+write_rds(
+  print_summary,
+  file.path(rep_dir_data, "print_summary.rds")
+)
+
 
 # For leaflet maps
+
 filter(leaf_stations_mgmt) %>%
-  st_transform(4326) %>% 
-  st_write("out/no2_stations_mgmt.geojson", delete_dsn = TRUE)
+  st_transform(4326) %>%
+  st_write(
+    file.path(rep_dir_out, "no2_stations_mgmt.geojson"),
+    delete_dsn = TRUE
+  )
 
 filter(leaf_az_mgmt) %>%
-  st_transform(4326) %>% 
-  st_write("out/no2_airzones_mgmt.geojson", delete_dsn = TRUE)
+  st_transform(4326) %>%
+  st_write(
+    file.path(rep_dir_out, "no2_airzones_mgmt.geojson"),
+    delete_dsn = TRUE
+  )
 
+# Copy station SVGs to leaflet_map only for rep_year 2024
+if (rep_year == 2024) {
+  
+  message("Copying station plots to leaflet_map for rep_year = 2024")
+  
+  leaflet_stn_dir <- file.path("leaflet_map", "station_plots")
+  dir.create(leaflet_stn_dir, showWarnings = FALSE, recursive = TRUE)
+  
+  source_dir <- rep_dir_station_plots
+  
+  svgs <- list.files(
+    source_dir,
+    pattern = "\\.svg$",
+    full.names = TRUE
+  )
+  
+  if (length(svgs) == 0) {
+    warning(
+      "No station SVGs found in ",
+      source_dir,
+      " for rep_year = 2024"
+    )
+  } else {
+    file.copy(
+      from = svgs,
+      to   = leaflet_stn_dir,
+      overwrite = TRUE
+    )
+  }
+  
+} else {
+  message(
+    "Skipping leaflet_map station SVG copy (rep_year = ",
+    rep_year, ")"
+  )
+}

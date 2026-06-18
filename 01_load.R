@@ -1,4 +1,4 @@
-# Copyright 2025 Province of British Columbia
+# Copyright 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -41,5 +41,4 @@ if(!file.exists(file_stn)) curl_download(file.path(ftp, "caaqs_stationlist.csv")
                                                    destfile = file_stn)
 
 # Update cached version of airzones
-airzones(ask = FALSE, force = TRUE) # Make sure up-to-date
-
+airzones(ask = FALSE, force = TRUE)

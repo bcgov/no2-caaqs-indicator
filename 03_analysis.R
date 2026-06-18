@@ -1,4 +1,4 @@
-# Copyright 2025 Province of British Columbia
+# Copyright 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -24,8 +24,9 @@ library("assertr")
 library("rcaaqs")
 
 # Load Data ----------------------
-no2_clean <- read_rds("data/datasets/no2_clean.rds")
-stations_clean <- read_rds("data/datasets/stations_clean.rds")
+no2_clean <- read_rds(file.path(rep_dir_data, "no2_clean.rds"))
+stations_clean <- read_rds(file.path(rep_dir_data, "stations_clean.rds"))
+
 
 # Calculate CAAQs --------------------------------------
 
@@ -77,13 +78,26 @@ az_mgmt <- az_ambient %>%
          caaqs_ambient)
 
 
-write_rds(no2_results, "data/datasets/no2_results.rds")
-write_rds(az_ambient, "data/datasets/az_ambient.rds")
-write_rds(az_mgmt, "data/datasets/az_mgmt.rds")
-write_rds(no2_3yr_mgmt, "data/datasets/no2_3yr_mgmt.rds")
-write_rds(no2_1yr_mgmt, "data/datasets/no2_1yr_mgmt.rds")
+write_rds(no2_results,  file.path(rep_dir_data, "no2_results.rds"))
+write_rds(az_ambient,   file.path(rep_dir_data, "az_ambient.rds"))
+write_rds(az_mgmt,      file.path(rep_dir_data, "az_mgmt.rds"))
+write_rds(no2_3yr_mgmt, file.path(rep_dir_data, "no2_3yr_mgmt.rds"))
+write_rds(no2_1yr_mgmt, file.path(rep_dir_data, "no2_1yr_mgmt.rds"))
 
-write_csv(no2_results, "out/no2_caaqs_combined_results.csv", na = "")
-write_csv(az_ambient, "out/no2_airzone_results.csv" , na = "")
-write_csv(az_mgmt, "out/no2_airzone_management_levels.csv", na = "")
+write_csv(
+  no2_results,
+  file.path(rep_dir_out, paste0("no2_caaqs_combined_results_", rep_year, ".csv")),
+  na = ""
+)
 
+write_csv(
+  az_ambient,
+  file.path(rep_dir_out, paste0("no2_airzone_results_", rep_year, ".csv")),
+  na = ""
+)
+
+write_csv(
+  az_mgmt,
+  file.path(rep_dir_out, paste0("no2_airzone_management_levels_", rep_year, ".csv")),
+  na = ""
+)

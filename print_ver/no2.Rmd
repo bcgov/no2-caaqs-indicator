@@ -1,12 +1,12 @@
 ---
-title: "Status of Nitrogen Dioxide in B.C. (2020-2022)"
+title: "Status of Nitrogen Dioxide in B.C. (2021-2023 & 2022-2024)"
 output:
   pdf_document: envreportutils.internal::print_ver
 topic: air
 ---
 
 <!--
-Copyright 2025 Province of British Columbia
+Copyright 2026 Province of British Columbia
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,10 +32,11 @@ library("here")
 library("purrr")
 library("ggplot2")
 library("ggtext") # Ensure map legends formatted correctly
-
+library("assertr")
 library("rcaaqs")
 library("envreportutils")
 library("envreportutils.internal")
+library("english")
 
 knitr_latex_char <- function(x) {
   y <- gsub("\\\\", "\\\\textbackslash{}", x) # backslash has to be first!
@@ -45,13 +46,18 @@ knitr_latex_char <- function(x) {
   return(y)
 }
 
-year_range <- "2020-2022"
+year_range <- "2022-2024"
+year_range_previous <- "2021-2023"
 
 # Data from 04_outputs.R
-plots <- read_rds(here("data/datasets/print_plots.rds"))
-stn_plots <- read_rds(here("data/datasets/print_stn_plots.rds"))
-print_summary <- read_rds(here("data/datasets/print_summary.rds"))
-no2_results <- read_rds(here("data/datasets/no2_results.rds")) # From 03_analysis.R
+plots <- read_rds(here("data/datasets/rep_year_2024/print_plots.rds"))
+plots_2023 <- read_rds(here("data/datasets/rep_year_2023/print_plots.rds"))
+stn_plots <- read_rds(here("data/datasets/rep_year_2024/print_stn_plots.rds"))
+print_summary <- read_rds(here("data/datasets/rep_year_2024/print_summary.rds"))
+no2_results <- read_rds(here("data/datasets/rep_year_2024/no2_results.rds")) # From 03_analysis.R
+no2_3yr_mgmt <- read_rds(here("data/datasets/rep_year_2024/no2_3yr_mgmt.rds"))
+no2_1yr_mgmt <- read_rds(here("data/datasets/rep_year_2024/no2_1yr_mgmt.rds"))
+stations_clean <- read_rds(here("data/datasets/rep_year_2024/stations_clean.rds"))
 
 # Specify cutoffs from rcaaqs
 no2_lvls <- achievement_levels %>%
@@ -59,27 +65,130 @@ no2_lvls <- achievement_levels %>%
   pull(lower_breaks, parameter)
 
 
+p1 <- print_summary$percent_achieved[print_summary$metric == "no2_1yr"]
+p3 <- print_summary$percent_achieved[print_summary$metric == "no2_3yr"]
+
+n1a <- print_summary$n_achieved[print_summary$metric == "no2_1yr"]
+n1  <- print_summary$n[print_summary$metric == "no2_1yr"]
+
+n3a <- print_summary$n_achieved[print_summary$metric == "no2_3yr"]
+n3  <- print_summary$n[print_summary$metric == "no2_3yr"]
+
+same_pct <- isTRUE(all.equal(p1, p3))
+
+no2_standards_sentence <- if (!same_pct) {
+  paste0(
+    "The annual standard was met at ", n1a, " of the ", n1, " stations (", p1,
+    "%) for which valid data were obtained, while the 1-hour standard was met at ",
+    n3a, " of the ", n3, " stations (", p3, "%) with sufficient data for analysis."
+  )
+} else {
+  paste0(
+    "The annual and 1-hour standards were met at ", p1,
+    "% of stations with sufficient data (", n1a, "/", n1,
+    " and ", n3a, "/", n3, " stations, respectively)."
+  )
+}
+
+# 2023 results
+year_prev <- 2023
+
+no2_3yr <- get_caaqs(no2_3yr_mgmt) %>%
+  filter(n_years > 1)
+
+no2_1yr <- get_caaqs(no2_1yr_mgmt) %>%
+  mutate(n_years = 1)
+
+
+no2_results_combined <- bind_rows(no2_3yr, no2_1yr) %>%
+  ungroup() %>%
+  left_join(stations_clean, by = "site") %>%
+  # Ensure only 1 analysis per site
+  add_count(site, caaqs_year, metric) %>%
+  assert(in_set(1), n) %>%
+  # Clean up
+  select(caaqs_year, airzone, 
+         station_name = site, 
+         region, 
+         latitude = lat, 
+         longitude = lon, 
+         metric,
+         n_years,	
+         min_year,	
+         max_year,
+         metric_value_ambient,
+         caaqs_ambient,
+         excluded,
+         metric_value_mgmt,
+         mgmt_level,
+         everything(), -n, -flag_daily_incomplete, -flag_yearly_incomplete) %>% 
+  arrange(caaqs_year, airzone)
+
+
+yrs_present <- sort(unique(no2_results_combined$caaqs_year))
+summarise_year <- function(df, y) {
+  az_achieved <- df %>%
+                  filter(caaqs_year == y) %>%
+                  nest(data = c(-metric, -caaqs_year)) %>%
+                  mutate(data = map(data, ~airzone_metric(., keep = "station_name", station_id = "station_name"))) %>%
+                  unnest(data) %>%
+                  select(airzone, metric, caaqs_year, everything()) %>%
+                  group_by(metric) %>%
+                  summarise(az_achieved = sum(caaqs_ambient == "Achieved", na.rm = TRUE))
+  df %>%
+    filter(caaqs_year == y) %>%
+    group_by(metric) %>%
+    filter(!is.na(metric_value_ambient)) %>%
+    summarise(
+      year = y,
+      n_stations = n(),
+      n_achieved = sum(caaqs_ambient == "Achieved", na.rm = TRUE),
+      pct_achieved = round(100 * n_achieved / n_stations),
+      .groups = "drop")  %>%
+      left_join(az_achieved, by = "metric")
+}
+
+summary_prev <- summarise_year(no2_results_combined, year_prev)
+
+p1_prev <- summary_prev$pct_achieved[summary_prev$metric == "no2_1yr"]
+p3_prev <- summary_prev$pct_achieved[summary_prev$metric == "no2_3yr"]
+
+n1a_prev <- summary_prev$n_achieved[summary_prev$metric == "no2_1yr"]
+n1_prev  <- summary_prev$n_stations[summary_prev$metric == "no2_1yr"]
+
+n3a_prev <- summary_prev$n_achieved[summary_prev$metric == "no2_3yr"]
+n3_prev  <- summary_prev$n_stations[summary_prev$metric == "no2_3yr"]
+
+same_pct_prev <- isTRUE(all.equal(p1_prev, p3_prev))
+
+no2_standards_sentence_prev <- if (!same_pct_prev) {
+  paste0(
+    "The annual standard was met at ", n1a_prev, " of the ", n1_prev, " stations (", p1_prev,
+    "%) for which valid data were obtained, while the 1-hour standard was met at ",
+    n3a_prev, " of the ", n3_prev, " stations (", p3_prev, "%) with sufficient data for analysis."
+  )
+} else {
+  paste0(
+    "The annual and 1-hour standards were met at ", p1_prev,
+    "% of stations with sufficient data (", n1a_prev, "/", n1_prev,
+    " and ", n3a_prev, "/", n3_prev, " stations, respectively)."
+  )
+}
 
 # Summaries to consult when writing descriptions....
 
 # Which Achieved or Not
-# read_rds(here("data/datasets/az_ambient.rds")) %>%
+# read_rds(here("data/datasets/rep_year_2024/az_ambient.rds")) %>%
 #   select(airzone, metric, caaqs_ambient) %>%
 #   arrange(metric, caaqs_ambient) %>%
 #   pivot_wider(names_from = metric, values_from = caaqs_ambient)
 
-# read_rds(here("data/datasets/az_mgmt.rds")) %>%
+# read_rds(here("data/datasets/rep_year_2024/az_mgmt.rds")) %>%
 #   select(airzone, mgmt_level, rep_metric)
 
 ```
 
-British Columbia operates a network of air monitoring stations that
-measure nitrogen dioxide and other air pollutants. This indicator
-reports on the concentration of nitrogen dioxide from `r year_range`
-and compares it to the [Canadian Ambient Air Quality
-Standards](https://www.ccme.ca/en/air-quality-report#slide-7)
-established by the [Canadian Council of Ministers of the
-Environment](http://www.ccme.ca).
+British Columbia has a network of air quality monitoring stations that measure nitrogen dioxide and other air contaminants. This indicator reports on the concentration of nitrogen dioxide from two reporting periods, `r year_range_previous` and `r year_range`. The data are reported as two metrics: an annual metric based on one year of data, and a 1-hour metric based on three consecutive years of data. These metrics are compared against the [Canadian Ambient Air Quality Standards](https://www.ccme.ca/en/air-quality-report#slide-7) to determine achievement and to define colour-based management levels. CAAQS were established by the [Canadian Council of Ministers of the Environment](http://www.ccme.ca) in 2012 as a key element of the Air Quality Management System that collaboratively and comprehensively manages air quality in Canada.
 
 \begin{center}
 
@@ -92,13 +201,13 @@ Environment](http://www.ccme.ca).
       
       \vspace{1mm}
           
-      NO$_{\text{2}}$ levels are calculated using \textbf{two} \hyperref[metric-info]{statistical forms called the annual and the 1-hour metrics}. The Canadian Ambient Air Quality Standard value for NO$_{\text{2}}$ annual is \textbf{`r no2_lvls[["no2_1yr"]]` parts per billion} and the standard value for NO$_{\text{2}}$ 1-hour is \textbf{`r no2_lvls[["no2_3yr"]]`} parts per billion
+      NO$_{\text{2}}$ levels are calculated using \textbf{two} \hyperref[metric-info]{statistical forms called the annual metric and the 1-hour metric}. The Canadian Ambient Air Quality Standard value for NO$_{\text{2}}$ annual is \textbf{`r no2_lvls[["no2_1yr"]]` parts per billion} and the standard value for NO$_{\text{2}}$ 1-hour is \textbf{`r no2_lvls[["no2_3yr"]]`} parts per billion
           
       \vspace{2mm}
       
       NO$_{\text{2}}$ standards are achieved when annual levels are 
       $\leq$`r no2_lvls[["no2_1yr"]]` ppb and 
-      1-hour levels are $\leq$`r no2_lvls[["no2_3yr"]]` ppb.
+      1-hour levels are $\leq$`r no2_lvls[["no2_3yr"]]` ppb. More stringent 2025 CAAQS for NO$_{\text{2}}$ apply in the next reporting period (2023-2025), with an annual metric of 12 ppb and 1-hour metric of 42 ppb.
           
   \end{minipage}
 }
@@ -122,42 +231,32 @@ Environment](http://www.ccme.ca).
 \end{center}
 \vspace{2mm}
 
--   **Nitrogen Dioxide (NO~2~) is a gaseous pollutant formed along with other nitrogen oxides (NO~x~) during the high temperature combustion of fossil fuels.** 
--   **Exposure to NO~2~ is known to affect human health and the environment** Long term exposures, for example, has been shown to induce the development of allergic responses, asthma, increases the susceptibility for respiratory infections, and has been linked to cardiovascular system and reproductive effects. Short term exposures can reduce lung function and aggravate respiratory symptoms and airway inflammation. These effects have no observed lower threshold, i.e., negative effects are observed even at low concentrations.
-- **Environmental effects of NO~2~ (and NO~x~ in general) include altered plant growth due to absorption through their leaves and from nitrogen deposition.** Impact on plants can negatively affect animals like caribou that depend on arboreal lichens for sustenance. NO2 also has indirect effects including its role in ozone formation and acid rain. Ozone is detrimental to plant life because exposure oxidizes (burns) plant tissues, and acid rain results in the acidification and eutrophication of ecosystems. Reddish-brown haze commonly found over urban centres is the result of higher concentrations of NO~2~ pollution.
--   **Nitrogen dioxide levels met the Canadian Ambient Air
-    Quality Standards at `r min(print_summary$percent_achieved)`
-    percent of assessed monitoring stations in B.C.** There are two standards 
+-   **Nitrogen dioxide (NO~2~) is a gaseous pollutant.** It forms along with other nitrogen oxides (NOx) when fossil fuels are burned in diesel trucks, cars, ships, power plants, and industrial facilities. 
+-   **Nitrogen dioxide can harm human health.** Long-term exposure has been linked to allergic responses, asthma, greater susceptibility to respiratory infections (including COVID-19), and effects on the heart and reproductive system. Short-term exposure can reduce lung function and aggravate respiratory symptoms and airway inflammation. These effects have no known safe limits - they can occur even at low concentrations.
+- **Nitrogen dioxide and other nitrogen oxides can also harm the environment.** They affect plant growth, contribute to acid rain, and play a role in forming ground-level ozone --- all of which can damage ecosystems. NO~2~ is also responsible for the reddish-brown haze sometimes seen over cities.
+-   **2021-2023: nitrogen dioxide levels met the Canadian Ambient Air
+    Quality Standards at `r min(summary_prev$pct_achieved)`
+    percent of assessed monitoring stations in B.C.** There are two metrics 
     for NO~2~---an annual standard and a
-    1-hour standard (see sidebar). The annual standard was met at 
-    `r print_summary$n_achieved[print_summary$metric == "no2_1yr"]` of the 
-    `r print_summary$n[print_summary$metric == "no2_1yr"]` stations 
-    (`r print_summary$percent_achieved[print_summary$metric == "no2_1yr"]`%) 
-    for which valid data was obtained, while the 1-hour standard was met at 
-    `r print_summary$n_achieved[print_summary$metric == "no2_3yr"]` of the 
-    `r print_summary$n[print_summary$metric == "no2_3yr"]` stations 
-    (`r print_summary$percent_achieved[print_summary$metric == "no2_3yr"]`%) 
-    with sufficient data for analysis.
--   **Nitrogen dioxide levels met both of the Canadian Ambient
-    Air Quality Standards in all of B.C.'s seven air zones.** 
+    1-hour standard (see sidebar). `r no2_standards_sentence_prev`
+-   **2022-2024: nitrogen dioxide levels met the Canadian Ambient Air
+    Quality Standards at `r min(print_summary$percent_achieved)`
+    percent of assessed monitoring stations in B.C.** `r no2_standards_sentence`
+-   **During both periods, nitrogen dioxide levels met both of the Canadian Ambient
+    Air Quality Standards in `r as.character(english(summary_prev$az_achieved[summary_prev$metric=="no2_1yr"]))` of B.C.'s seven air zones.** 
     Currently, there are no 
     [air monitoring stations](http://www2.gov.bc.ca/gov/content?id=292EC5BD62A149A192B7DD2CE155E33E)
     in the Northwest air zone.
     <!-- See the summaries calculated in the starting RMD chunk for information 
      needed to fill in the above bullet point. -->
 -   **Nitrogen dioxide levels are used to set management levels
-    for each air zone.** Four management levels (green, yellow, orange,
-    and red) are each associated with a suite of actions that become
-    more rigorous as nitrogen dioxide levels approach the
-    Canadian Ambient Air Quality Standards.
+    for each air zone.** The four management levels and the recommended actions are: (1) green (actions for keeping clean areas clean); (2) yellow (actions for preventing air quality deterioration); (3) orange (actions for preventing Canadian Ambient Air Quality Standard exceedance); and (4) red (actions for achieving air zone Canadian Ambient Air Quality Standard). Each management level corresponds to actions that become more rigorous as the level of NO~2~ approaches CAAQS. Suggested actions for each management level are outlined in the [Guidance Document on Air Zone Management](https://ccme.ca/en/res/guidancedocumentonairzonemanagement_secured.pdf#page=15).
     
-    
-
-The maps and chart below summarise the Canadian Ambient Air Quality Standard 
+The maps and charts below summarise the Canadian Ambient Air Quality Standard 
 achievement status for nitrogen dioxide in B.C. air zones, as
 well as both the annual and 1-hour NO~2~ levels at individual
 monitoring stations. Summaries are given for each monitoring station where
-sufficient data was available for the `r year_range` reporting period.
+sufficient data were available for the `r year_range` and `r year_range_previous` reporting periods.
 
 # Status of 1-hour NO~2~ Levels in B.C. Air Zones (`r year_range`)
 
@@ -182,6 +281,29 @@ plots[["achievement_map_1yr"]]
 plots[["no2_ambient_summary_plot"]]
 ```
 
+# Status of 1-hour NO~2~ Levels in B.C. Air Zones (`r year_range_previous`)
+
+```{r achievement_map_3yr_2023, fig.height=8}
+plots[["achievement_map_3yr"]]
+```
+
+
+\newpage
+
+# Status of Annual NO~2~ Levels in B.C. Air Zones (`r year_range_previous`)
+
+```{r achievement_map_1yr_2023, fig.height=8}
+plots_2023[["achievement_map_1yr"]]
+```
+
+\newpage
+
+# NO~2~ Metrics for Air Monitoring Stations within B.C. Air Zones (`r year_range_previous`)
+
+```{r no2_ambient_summary_plot_2023, fig.height=9}
+plots_2023[["no2_ambient_summary_plot"]]
+```
+
 \hyperdef{}{metric-info}{}
 ### More about the Canadian Ambient Air Quality Standard nitrogen dioxide metrics:
 
@@ -189,23 +311,13 @@ plots[["no2_ambient_summary_plot"]]
     (NO~2~). The statistical form of the NO~2~ annual
     metric is the average over a single calendar year of all 1-hour average
     concentrations of NO~2~. The statistical form of the NO~2~ 1-hour metric is 
-    the 3-year average of the annual 98th percentile of the daily maximum 1-hr 
+    the 3-year average of the annual 98th percentile (typically 8th highest) of the daily maximum 1-hr 
     average concentrations of NO~2~.
 -   The NO~2~ metric for an air zone is the highest NO~2~ metric value
-    reported from monitoring stations within the air zone. Air zone
-    metric values are only taken from stations reporting on two years of
-    data when there are no available three-year reporting stations in
-    the air zone.
--   Only air monitoring stations with sufficient data on nitrogen dioxide
-    concentrations for the `r year_range` reporting period
-    were included in this indicator. Visit [Current Air Quality
-    Data](http://www2.gov.bc.ca/gov/content?id=292EC5BD62A149A192B7DD2CE155E33E)
-    for a complete list of air monitoring stations across B.C.
--   Data completeness and sufficiency criteria for the two NO~2~ metrics
-    are described in the [Guidance Document on Achievement
-    Determination: Canadian Ambient Air Quality Standards for Fine
-    Particulate Matter and Ozone (2012)](http://publications.gc.ca/pub?id=9.697756&sl=0).
-    
+    reported from monitoring stations within the air zone. 
+-   Criteria for data completeness and sufficiency of the two NO~2~ metrics are described in the [Guidance Document on Achievement Determination: Canadian Ambient Air Quality Standards for Nitrogen Dioxide (2020)](https://ccme.ca/en/res/gdadforcaaqsfornitrogendioxide_en1.0.pdf).
+-   Air quality monitoring stations with at least two years of valid data from the `r year_range` and `r year_range_previous` reporting periods were included in this indicator. Visit [Current Air Quality  Data](http://www2.gov.bc.ca/gov/content?id=292EC5BD62A149A192B7DD2CE155E33E) for a complete list of currently active air quality monitoring stations across B.C.
+
 ### Canada-wide Air Quality Management System
 
 The Air Quality Management System is Canada's approach for protecting
@@ -243,7 +355,7 @@ pollutants below the Canadian Ambient Air Quality Standards.
 
 \newpage
     
-# Air Quality Management Levels in B.C. Air Zones   
+# Air Quality Management Levels in B.C. Air Zones (`r year_range`)  
 
 ```{r no2_mgmt_map, fig.height=9}
 plots[["no2_mgmt_map"]]
@@ -251,10 +363,24 @@ plots[["no2_mgmt_map"]]
 
 \newpage
 
-# Station-Level Air Quality Management Levels Within Air Zones
+# Station-Level Air Quality Management Levels Within Air Zones (`r year_range`)
 
 ```{r no2_mgmt_chart, fig.height=8}
 plots[["no2_mgmt_chart"]]
+```
+
+# Air Quality Management Levels in B.C. Air Zones (`r year_range_previous`)  
+
+```{r no2_mgmt_map_2023, fig.height=9}
+plots_2023[["no2_mgmt_map"]]
+```
+
+\newpage
+
+# Station-Level Air Quality Management Levels Within Air Zones (`r year_range_previous`)
+
+```{r no2_mgmt_chart_2023, fig.height=8}
+plots_2023[["no2_mgmt_chart"]]
 ```
 
 #### More about the Air Quality Management System management levels:
@@ -287,10 +413,7 @@ plots[["no2_mgmt_chart"]]
 
 The methods used to develop this indicator---including procedures, data
 requirements, and calculation of the Canadian Ambient Air Quality
-Standard nitrogen dioxide metrics---are detailed in the [Guidance
-Document on Achievement Determination: Canadian Ambient Air Quality
-Standards for Fine Particulate Matter and Ozone (2012)
-](http://publications.gc.ca/pub?id=9.697756&sl=0)
+Standard nitrogen dioxide metrics---are detailed in the [Guidance Document on Achievement Determination: Canadian Ambient Air Quality Standards for Nitrogen Dioxide (2020)](https://ccme.ca/en/res/gdadforcaaqsfornitrogendioxide_en1.0.pdf)
 published by the [Canadian Council of Ministers of the
 Environment](http://www.ccme.ca).
 
@@ -305,22 +428,17 @@ the analysis presented on this page is also available on
 
 ### References and Other Useful Links
 
--   Read individual [Air Zone
-    reports](http://www2.gov.bc.ca/gov/search?id=04D14E7F7EE043889E1AC20E205CA3F8&tab=1&sourceId=267EE7E2432B4DE89BF1905EF80F505E&q=%22air+zone+report%22)
-    on the achievement of the Canadian Ambient Air Quality Standards for
-    ground-level ozone and fine particulate matter in B.C.
--   [Learn more about the implementation of the Air Quality Management
-    System in British
-    Columbia](http://www2.gov.bc.ca/gov/content?id=8FA84ADC845A49AB93E525A58D9D4A97)
--   [Access B.C.'s real-time data on air pollutants and find locations
-    of all provincial air monitoring stations in
-    B.C.](http://www2.gov.bc.ca/gov/content?id=292EC5BD62A149A192B7DD2CE155E33E)
--   [BC Lung Association's BC State of the Air
-    Reports](https://bc.lung.ca/state-air-report)
--   [Canadian Environmental Sustainability Indicators: Air 
-    Indicators](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/air.html)
--   ^1^[Canadian Smog Science Assessment: Highlights and Key
-    Messages](http://publications.gc.ca/site/eng/9.694820/publication.html)
+-   [Access B.C.'s real-time data on air pollutants and find locations of all provincial air monitoring stations in B.C.](http://www2.gov.bc.ca/gov/content?id=292EC5BD62A149A192B7DD2CE155E33E)
+-   [BC Lung Association's BC State of the Air Reports](https://bclung.ca/lung-health/air-quality/state-of-the-air-report-archives/)
+-   [Canadian Ambient Air Quality Standards](https://www.ccme.ca/en/air-quality-report#slide-7)
+-   [Canadian Council of Ministers of the Environment](https://www.ccme.ca/en)
+-   [Canadian Environmental Sustainability Indicators: Air Indicators](https://www.canada.ca/en/environment-climate-change/services/environmental-indicators/air.html)
+-   [Canadian Smog Science Assessment: Highlights and Key Messages](http://publications.gc.ca/site/eng/9.694820/publication.html)
+-   [Guidance Document on Achievement Determination for Canadian Ambient Air Quality Standards for Nitrogen Dioxide](https://ccme.ca/en/res/gdadforcaaqsfornitrogendioxide_en1.0.pdf)
+-   [Guidance Document on Air Zone Management](https://ccme.ca/en/res/guidancedocumentonairzonemanagement_secured.pdf)
+-   [Learn more about the implementation of the Air Quality Management System in British Columbia](http://www2.gov.bc.ca/gov/content?id=8FA84ADC845A49AB93E525A58D9D4A97)
+-   Read individual [Air Zone reports](https://www2.gov.bc.ca/gov/content/environment/air-land-water/air/reports/latest-air-zone-reports) on the achievement of the Canadian Ambient Air Quality Standards in B.C.
+
 
 ### Data
 
@@ -329,7 +447,7 @@ each file, as indicated in parentheses below.
 
 -   [Indicator data: BC Nitrogen Dioxide Canadian Ambient Air
     Quality Standards
-    `r year_range`](https://catalogue.data.gov.bc.ca/dataset/699be99e-a9ba-403e-b0fe-3d13f84f45ab) (`r get_data_license("ogl-bc")`)
+    `r year_range`](https://catalogue.data.gov.bc.ca/dataset/indicator-summary-data-bc-nitrogen-dioxide-canadian-ambient-air-quality-standards) (`r get_data_license("ogl-bc")`)
 -   [BC NO~2~ Hourly Data & Air Monitoring Station
     locations](https://catalogue.data.gov.bc.ca/dataset/77eeadf4-0c19-48bf-a47a-fa9eef01f409) (`r get_data_license("ogl-bc")`)
 -   [BC Air
@@ -341,9 +459,9 @@ Published and Available On-Line at Environmental Reporting BC:
 Email correspondence to: envreportbc@gov.bc.ca
 
 *Suggested Citation*:  
-Environmental Reporting BC. `r format(Sys.Date(), "%Y")`. Status of Suphur Dioxide in B.C. (`r year_range`). State of Environment Reporting, Ministry of Environment and Parks, British Columbia, Canada.
+Environmental Reporting BC. `r format(Sys.Date(), "%Y")`. Status of Nitrogen Dioxide in B.C. (`r paste0(year_range_previous, " & ", year_range)`). State of Environment Reporting, Ministry of Environment and Parks, British Columbia, Canada.
 
-# Appendix: Detailed nitrogen dioxide Candadian Ambient Air Quality Standard results for each monitoring station within air zones in B.C.
+# Appendix: Detailed nitrogen dioxide Canadian Ambient Air Quality Standard results for each monitoring station within air zones in B.C.
 
 \vspace{1cm}
 
